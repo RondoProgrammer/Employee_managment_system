@@ -28,15 +28,24 @@ def index():
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        next_page = request.args.get('next')
-        return redirect(next_page) if next_page else redirect(url_for('main.dashboard'))
+        return redirect(url_for('main.dashboard'))
+    
     form = LoginForm()
     if form.validate_on_submit():
+        # First check Administrator
         user = Administrator.query.filter_by(name=form.username.data).first()
-        if user and user.password == form.password.data:  # Use hash check in production!
+        
+        # If not found, check DepartmentManager
+        if not user:
+            user = DepartmentManager.query.filter_by(name=form.username.data).first()
+
+        if user and user.password == form.password.data:  # Use hash check later
             login_user(user)
-            return redirect(url_for('main.index'))
-        flash('Invalid username or password')
+            flash('Login successful', 'success')
+            return redirect(url_for('main.dashboard'))
+
+        flash('Invalid username or password', 'danger')
+
     return render_template('login.html', form=form)
 
 @bp.route('/logout')
