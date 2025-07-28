@@ -27,6 +27,7 @@ def create_app():
     from . import routes
     app.register_blueprint(routes.bp)
 
+    # Import models so Alembic sees them for migrations
     from app import models
 
     #returns the fully configured app instance
