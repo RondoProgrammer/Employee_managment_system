@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Edit Employee</h2>
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.position.label(class="form-label") }}
+            {{ form.position(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.salary.label(class="form-label") }}
+            {{ form.salary(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.department_id.label(class="form-label") }}
+            {{ form.department_id(class="form-select") }}
+        </div>
+
+        <button type="submit" class="btn btn-success">Update Employee</button>
+        <a href="{{ url_for('main.list_employees') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

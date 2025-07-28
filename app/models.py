@@ -40,7 +40,7 @@ class Department(db.Model):
 
     #lazy=True 
     #Added relationship with employee here (not necessary in employee anymore bc its handled from backref)
-    employees = db.relationship('Employee', backref='departments')
+    employees = db.relationship('Employee', backref='department', lazy=True)
 
     def __repr__(self):
         return f'<Department {self.name}>'
@@ -52,11 +52,11 @@ class Employee(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True, )
     name = db.Column(db.String(64), nullable=False)
     position = db.Column(db.String(64), nullable=False)
-    
     salary = db.Column(db.Float, nullable=False)
 
     # Foreign key to link each employee to a department
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
+
 
     #creates a string of the above, helpful when debugging
     def __repr__(self):
