@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 
+
 #creates objects that handle databases, migrations, login state
 db = SQLAlchemy()
 migrate = Migrate()
@@ -29,6 +30,12 @@ def create_app():
 
     # Import models so Alembic sees them for migrations
     from app import models
+
+    from app.models import Administrator, DepartmentManager
+
+    @login_manager.user_loader
+    def load_user(user_id):
+         return Administrator.query.get(int(user_id))
 
     #returns the fully configured app instance
     return app 
