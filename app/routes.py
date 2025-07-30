@@ -30,7 +30,7 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
     
-    form = LoginForm()
+    form = LoginForm()  # Create an instance of the LoginForm(username+password)
     if form.validate_on_submit():
         # First check Administrator
         user = Administrator.query.filter_by(name=form.username.data).first()
@@ -39,7 +39,7 @@ def login():
         if not user:
             user = DepartmentManager.query.filter_by(name=form.username.data).first()
 
-        if user and user.password == form.password.data:  # Use hash check later
+        if user and user.password == form.password.data:  
             login_user(user)
             flash('Login successful', 'success')
             return redirect(url_for('main.dashboard'))
@@ -93,9 +93,7 @@ def add_employee():
     
     return render_template('employees/add.html', form=form)
 
-# ------------------------
-# Edit Employee
-# ------------------------
+
 @bp.route('/employee/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_employee(id):
@@ -123,12 +121,11 @@ def edit_employee(id):
 
     return render_template('employees/edit.html', form=form)
 
-# ------------------------
-# Delete Employee
-# ------------------------
+
 @bp.route('/employee/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_employee(id):
+
     employee = Employee.query.get_or_404(id)
 
     # Authorization check
@@ -140,3 +137,53 @@ def delete_employee(id):
     db.session.commit()
     flash('Employee deleted successfully!', 'success')
     return redirect(url_for('main.list_employees'))
+
+# List Departments
+@bp.route('/Departments')
+@login_required
+def list_departments():
+    departments = Department.query.all()
+    return render_template('Departments/list.html', departments=departments)
+
+# Add Department
+@bp.route('/Department/add', methods=['GET', 'POST'])
+@login_required
+def add_department():
+    # Get all managers to populate the dropdown
+    managers = DepartmentManager.query.all()
+
+    if request.method == 'POST':
+        name = request.form['name']
+        manager_id = request.form['manager_id']
+
+        new_dept = Department(name=name, manager_id=manager_id)
+        db.session.add(new_dept)
+        db.session.commit()
+        flash('Department added successfully!', 'success')
+        return redirect(url_for('main.list_departments'))
+
+    return render_template('Departments/add.html', managers=managers)
+
+@bp.route('/department/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_department(id):
+    department = Department.query.get_or_404(id)
+    db.session.delete(department)
+    db.session.commit()
+    flash('Department deleted successfully!', 'success')
+    return redirect(url_for('main.list_departments'))
+
+@bp.route('/Department/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_department(id):
+    department = Department.query.get_or_404(id)
+    managers = DepartmentManager.query.all()
+
+    if request.method == 'POST':
+        department.name = request.form['name']
+        department.manager_id = request.form['manager_id']
+        db.session.commit()
+        flash('Department updated successfully!', 'success')
+        return redirect(url_for('main.list_departments'))
+
+    return render_template('Departments/edit.html', department=department, managers=managers)

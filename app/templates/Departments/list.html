@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Departments</h2>
+    <a href="{{ url_for('main.add_department') }}" class="btn btn-primary mb-3">Add Department</a>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Manager</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dept in departments %}
+            <tr>
+                <td>{{ dept.id }}</td>
+                <td>{{ dept.name }}</td>
+                <td>{{ dept.manager.name }}</td>
+                <td>
+                    <a href="{{ url_for('main.edit_department', id=dept.id) }}" class="btn btn-sm btn-warning">Edit</a>
+                    <form action="{{ url_for('main.delete_department', id=dept.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?');">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,16 +1,31 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container mt-4">
-    <h2>Hello, {{ current_user.name }}!</h2>
+    <h2>Welcome, {{ current_user.name }}!</h2>
     <p>You are logged in as 
-       {% if current_user.__class__.__name__ == 'Administrator' %}
-           <strong>Administrator</strong>
-       {% else %}
-           <strong>Department Manager</strong>
-       {% endif %}
+        {% if current_user.__class__.__name__ == 'Administrator' %}
+            <strong>Administrator</strong>
+        {% else %}
+            <strong>Department Manager</strong>
+        {% endif %}
     </p>
-    <a href="{{ url_for('main.list_employees') }}" class="btn btn-primary">Manage Employees</a>
-    <a href="{{ url_for('main.logout') }}" class="btn btn-secondary">Logout</a>
+
+    <div class="list-group mt-4">
+        <a href="{{ url_for('main.list_employees') }}" class="list-group-item list-group-item-action">
+            Manage Employees
+        </a>
+
+        {% if current_user.__class__.__name__ == 'Administrator' %}
+        <a href="{{ url_for('main.list_departments') }}" class="list-group-item list-group-item-action">
+            Manage Departments
+        </a>
+        {% endif %}
+
+        <a href="{{ url_for('main.logout') }}" class="list-group-item list-group-item-action text-danger">
+            Logout
+        </a>
+    </div>
 </div>
 {% endblock %}
+
 
