@@ -2,14 +2,13 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 #Blueprint lets you organize routes into modular groups (ex: route folders)
 #render_template returns HTML page from the templates/ folder
 from flask_login import login_user, logout_user, login_required, current_user
-from app.forms import LoginForm, EmployeeForm
-from app.models import Administrator, Employee, DepartmentManager, Department
+from app.forms import LoginForm, EmployeeForm, DepartmentForm
+from app.models import User, Employee, Department
 from app import db
 
 
 #creates a object named 'main' (identifier of this group of routes)
-#__name__ tells Flask where thisblueprint is defined, so it can locate 
-# templates and static files realative to this file
+#__name__ tells Flask where thisblueprint is defined, so it can locate templates and static files realative to this file
 bp = Blueprint('main', __name__)
 
 #The route decorator for bp, defines the URl path / 
@@ -31,52 +30,67 @@ def login():
         return redirect(url_for('main.dashboard'))
     
     form = LoginForm()  # Create an instance of the LoginForm(username+password)
-    if form.validate_on_submit():
-        # First check Administrator
-        user = Administrator.query.filter_by(name=form.username.data).first()
-        
-        # If not found, check DepartmentManager
-        if not user:
-            user = DepartmentManager.query.filter_by(name=form.username.data).first()
-
-        if user and user.password == form.password.data:  
-            login_user(user)
-            flash('Login successful', 'success')
-            return redirect(url_for('main.dashboard'))
-
-        flash('Invalid username or password', 'danger')
+    if form.validate_on_submit(): #Checks if the form was submitted(POST) and is valid
+        user = User.query.filter_by(username=form.username.data).first()  # Find user by username
+        if user and user.password == form.password.data:  # Check if user exists and password matches
+            login_user(user)  # Log in the user 
 
     return render_template('login.html', form=form)
 
+# ------------------------
+# Logout
+# ------------------------
 @bp.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('main.index'))
 
+# ------------------------
+# Dashboard
+# ------------------------
 @bp.route('/dashboard')
 @login_required
 def dashboard():
     return render_template('dashboard.html')
 
+# ------------------------
+# List Employees
+# ------------------------
 @bp.route('/employees')
 @login_required
 def list_employees():
-    if hasattr(current_user, 'department'):  # Department Manager
-        employees = Employee.query.filter_by(department_id=current_user.department.id).all()
-    else:  # Admin
+    if current_user.role == 'department_manager':
+        # Get employees only in the manager's department
+        if current_user.department_id:
+            employees = Employee.query.filter_by(department_id=current_user.department_id).all()
+        else:
+            employees = []
+            flash('You are not assigned to any department yet.', 'warning')
+    else:
+        # Admin sees all employees
         employees = Employee.query.all()
+
     return render_template('employees/list.html', employees=employees)
 
+# ------------------------
+# Add Employee
+# ------------------------
 @bp.route('/employee/add', methods=['GET', 'POST'])
 @login_required
 def add_employee():
     form = EmployeeForm()
-    
-    # Limit department choices based on role
-    if hasattr(current_user, 'department'):
-        form.department_id.choices = [(current_user.department.id, current_user.department.name)]
+
+    # Limit department choices for managers
+    if current_user.role == 'department_manager':
+        # Manager can only add to their department
+        if current_user.department_id:
+            form.department_id.choices = [(current_user.department_id, current_user.department.name)]
+        else:
+            flash('You are not assigned to any department.', 'danger')
+            return redirect(url_for('main.list_employees'))
     else:
+        # Admin can select any department
         form.department_id.choices = [(d.id, d.name) for d in Department.query.all()]
 
     if form.validate_on_submit():
@@ -90,23 +104,25 @@ def add_employee():
         db.session.commit()
         flash('Employee added successfully!', 'success')
         return redirect(url_for('main.list_employees'))
-    
+
     return render_template('employees/add.html', form=form)
 
-
+# ------------------------
+# Edit Employee
+# ------------------------
 @bp.route('/employee/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_employee(id):
     employee = Employee.query.get_or_404(id)
-    
+    form = EmployeeForm(obj=employee)
+
     # Authorization check
-    if hasattr(current_user, 'department') and employee.department_id != current_user.department.id:
+    if current_user.role == 'department_manager' and employee.department_id != current_user.department_id:
         flash('You are not authorized to edit this employee.', 'danger')
         return redirect(url_for('main.list_employees'))
 
-    form = EmployeeForm(obj=employee)
-    if hasattr(current_user, 'department'):
-        form.department_id.choices = [(current_user.department.id, current_user.department.name)]
+    if current_user.role == 'department_manager':
+        form.department_id.choices = [(current_user.department_id, current_user.department.name)]
     else:
         form.department_id.choices = [(d.id, d.name) for d in Department.query.all()]
 
@@ -119,17 +135,18 @@ def edit_employee(id):
         flash('Employee updated successfully!', 'success')
         return redirect(url_for('main.list_employees'))
 
-    return render_template('employees/edit.html', form=form)
+    return render_template('employees/edit.html', form=form, employee=employee)
 
-
+# ------------------------
+# Delete Employee
+# ------------------------
 @bp.route('/employee/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_employee(id):
-
     employee = Employee.query.get_or_404(id)
 
     # Authorization check
-    if hasattr(current_user, 'department') and employee.department_id != current_user.department.id:
+    if current_user.role == 'department_manager' and employee.department_id != current_user.department_id:
         flash('You are not authorized to delete this employee.', 'danger')
         return redirect(url_for('main.list_employees'))
 
@@ -138,52 +155,79 @@ def delete_employee(id):
     flash('Employee deleted successfully!', 'success')
     return redirect(url_for('main.list_employees'))
 
-# List Departments
-@bp.route('/Departments')
+
+# ------------------------
+# Departments: List
+# ------------------------
+@bp.route('/departments')
 @login_required
 def list_departments():
-    departments = Department.query.all()
-    return render_template('Departments/list.html', departments=departments)
+    if current_user.role == 'department_manager':
+        if current_user.department_id:
+            departments = Department.query.filter_by(id=current_user.department_id).all()
+        else:
+            departments = []
+            flash('You are not assigned to any department yet.', 'warning')
+    else:
+        # administrator
+        departments = Department.query.all()
+    return render_template('departments/list.html', departments=departments)
 
-# Add Department
-@bp.route('/Department/add', methods=['GET', 'POST'])
+# ------------------------
+# Departments: Add (Admin only)
+# ------------------------
+@bp.route('/department/add', methods=['GET', 'POST'])
 @login_required
 def add_department():
-    # Get all managers to populate the dropdown
-    managers = DepartmentManager.query.all()
-
-    if request.method == 'POST':
-        name = request.form['name']
-        manager_id = request.form['manager_id']
-
-        new_dept = Department(name=name, manager_id=manager_id)
-        db.session.add(new_dept)
-        db.session.commit()
-        flash('Department added successfully!', 'success')
+    if current_user.role != 'administrator':
+        flash('Only administrators can add departments.', 'danger')
         return redirect(url_for('main.list_departments'))
 
-    return render_template('Departments/add.html', managers=managers)
+    form = DepartmentForm()
+    if form.validate_on_submit():
+        d = Department(name=form.name.data.strip())
+        db.session.add(d)
+        db.session.commit()
+        flash('Department added.', 'success')
+        return redirect(url_for('main.list_departments'))
+    return render_template('departments/add.html', form=form)
 
+#NOT FULLY CHECKED YET,   JUST TO TEST WEBSITE FUNCTIONALITY
+# ------------------------
+# Departments: Edit (Admin only)
+# ------------------------
+@bp.route('/department/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_department(id):
+    if current_user.role != 'administrator':
+        flash('Only administrators can edit departments.', 'danger')
+        return redirect(url_for('main.list_departments'))
+
+    dept = Department.query.get_or_404(id)
+    form = DepartmentForm(obj=dept)
+    if form.validate_on_submit():
+        dept.name = form.name.data.strip()
+        db.session.commit()
+        flash('Department updated.', 'success')
+        return redirect(url_for('main.list_departments'))
+    return render_template('departments/edit.html', form=form)
+
+# ------------------------
+# Departments: Delete (Admin only)
+# ------------------------
 @bp.route('/department/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_department(id):
-    department = Department.query.get_or_404(id)
-    db.session.delete(department)
-    db.session.commit()
-    flash('Department deleted successfully!', 'success')
-    return redirect(url_for('main.list_departments'))
-
-@bp.route('/Department/edit/<int:id>', methods=['GET', 'POST'])
-@login_required
-def edit_department(id):
-    department = Department.query.get_or_404(id)
-    managers = DepartmentManager.query.all()
-
-    if request.method == 'POST':
-        department.name = request.form['name']
-        department.manager_id = request.form['manager_id']
-        db.session.commit()
-        flash('Department updated successfully!', 'success')
+    if current_user.role != 'administrator':
+        flash('Only administrators can delete departments.', 'danger')
         return redirect(url_for('main.list_departments'))
 
-    return render_template('Departments/edit.html', department=department, managers=managers)
+    dept = Department.query.get_or_404(id)
+    if dept.employees:
+        flash('Cannot delete a department that still has employees.', 'warning')
+        return redirect(url_for('main.list_departments'))
+
+    db.session.delete(dept)
+    db.session.commit()
+    flash('Department deleted.', 'success')
+    return redirect(url_for('main.list_departments'))

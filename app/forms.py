@@ -2,6 +2,12 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, FloatField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Length
 
+
+class DepartmentForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(max=128)])
+    submit = SubmitField('Save')
+
+
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])

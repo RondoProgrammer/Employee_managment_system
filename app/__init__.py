@@ -31,11 +31,11 @@ def create_app():
     # Import models so Alembic sees them for migrations
     from app import models
 
-    from app.models import Administrator, DepartmentManager
+    from app.models import User
 
     @login_manager.user_loader
     def load_user(user_id):
-         return Administrator.query.get(int(user_id))
+         return User.query.get(int(user_id))
 
     #returns the fully configured app instance
     return app 

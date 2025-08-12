@@ -1,33 +1,32 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% block title %}Add Employee · EMS{% endblock %}
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">Add New Employee</h2>
-
-    <form method="POST">
-        {{ form.hidden_tag() }}
-
-        <div class="mb-3">
-            {{ form.name.label(class="form-label") }}
-            {{ form.name(class="form-control", placeholder="Enter employee name") }}
+  <h1 class="h4 mb-3">Add Employee</h1>
+  <div class="card p-3 shadow-sm">
+    <form method="post" novalidate>
+      {{ form.csrf_token if form.csrf_token is defined }}
+      <div class="row g-3">
+        <div class="col-md-6">
+          {{ form.name.label(class='form-label') }}
+          {{ form.name(class='form-control', placeholder='Full name') }}
         </div>
-
-        <div class="mb-3">
-            {{ form.position.label(class="form-label") }}
-            {{ form.position(class="form-control", placeholder="Enter position") }}
+        <div class="col-md-6">
+          {{ form.position.label(class='form-label') }}
+          {{ form.position(class='form-control', placeholder='Position') }}
         </div>
-
-        <div class="mb-3">
-            {{ form.salary.label(class="form-label") }}
-            {{ form.salary(class="form-control", placeholder="Enter salary") }}
+        <div class="col-md-6">
+          {{ form.salary.label(class='form-label') }}
+          {{ form.salary(class='form-control', placeholder='0.00', step='0.01') }}
         </div>
-
-        <div class="mb-3">
-            {{ form.department_id.label(class="form-label") }}
-            {{ form.department_id(class="form-select") }}
+        <div class="col-md-6">
+          {{ form.department_id.label(class='form-label') }}
+          {{ form.department_id(class='form-select') }}
         </div>
-
-        <button type="submit" class="btn btn-primary">Add Employee</button>
-        <a href="{{ url_for('main.list_employees') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+      <div class="mt-3">
+        {{ form.submit(class='btn btn-primary') }}
+        <a href="{{ url_for('main.list_employees') }}" class="btn btn-link">Cancel</a>
+      </div>
     </form>
-</div>
+  </div>
 {% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Add Department · EMS{% endblock %}
+{% block content %}
+  <h1 class="h4 mb-3">Add Department</h1>
+  <div class="card p-3 shadow-sm">
+    <form method="post" novalidate>
+      {{ form.csrf_token if form.csrf_token is defined }}
+      <div class="mb-3">
+        {{ form.name.label(class='form-label') }}
+        {{ form.name(class='form-control', placeholder='Department name') }}
+      </div>
+      {{ form.submit(class='btn btn-primary') }}
+      <a href="{{ url_for('main.list_departments') }}" class="btn btn-link">Cancel</a>
+    </form>
+  </div>
+{% endblock %}
