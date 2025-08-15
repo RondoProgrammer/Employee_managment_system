@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 #Blueprint lets you organize routes into modular groups (ex: route folders)
 #render_template returns HTML page from the templates/ folder
 from flask_login import login_user, logout_user, login_required, current_user
-from app.forms import LoginForm, EmployeeForm, DepartmentForm
+from app.forms import LoginForm, EmployeeForm, DepartmentForm, ManagerForm
 from app.models import User, Employee, Department
 from app import db
 
@@ -192,10 +192,10 @@ def add_department():
         return redirect(url_for('main.list_departments'))
     return render_template('departments/add.html', form=form)
 
-#NOT FULLY CHECKED YET,   JUST TO TEST WEBSITE FUNCTIONALITY
+
 # ------------------------
 # Departments: Edit (Admin only)
-# ------------------------
+'''
 @bp.route('/department/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_department(id):
@@ -211,6 +211,7 @@ def edit_department(id):
         flash('Department updated.', 'success')
         return redirect(url_for('main.list_departments'))
     return render_template('departments/edit.html', form=form)
+'''
 
 # ------------------------
 # Departments: Delete (Admin only)
@@ -231,3 +232,102 @@ def delete_department(id):
     db.session.commit()
     flash('Department deleted.', 'success')
     return redirect(url_for('main.list_departments'))
+
+
+@bp.route('/managers')
+@login_required
+def list_managers():
+    if current_user.role != 'administrator':
+        flash('Access denied. Only Admins can view this page.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    managers = User.query.filter_by(role='department_manager').all()
+
+    # Render the department manager dashboard template
+    return render_template('managers/list.html',managers=managers)
+
+@bp.route('/managers/add', methods=['GET' , 'POST'])
+@login_required
+def add_managers():
+    if current_user.role != 'administrator':
+        flash('Access denied. Only Admins can add department managers.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    form = ManagerForm()
+
+    free_departments = Department.query.filter(~Department.manager.any()).all()
+    form.department_id.choices = [(dept.id, dept.name) for dept in free_departments]
+
+    if not free_departments:
+        flash('No available departments without a manager.', 'warning')
+        return redirect(url_for('main.dashboard'))
+
+    if form.validate_on_submit():
+        new_manager = User(
+            username=form.username.data.strip(),
+            password=form.password.data.strip(),  
+            role='department_manager',
+            department_id=form.department_id.data
+        )
+        db.session.add(new_manager)
+        db.session.commit()
+        flash('Department Manager added successfully!', 'success')
+        return redirect(url_for('main.list_managers'))
+
+    return render_template('managers/add.html', form=form)
+
+
+@bp.route('/managers/delete/<int:id>', methods=['POST'])
+def delete_managers(id):
+    manager = User.query.get_or_404(id)
+
+    # Only allow deleting department managers
+    if manager.role != 'department_manager':
+        flash('You can only delete department managers.', 'danger')
+        return redirect(url_for('main.list_managers'))
+
+    db.session.delete(manager)
+    db.session.commit()
+    flash(f'Manager "{manager.username}" deleted successfully.', 'success')
+    return redirect(url_for('main.list_managers'))
+
+
+@bp.route('/managers/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_managers(id):
+    manager = User.query.get_or_404(id)
+
+    # Only department managers can be edited here
+    if manager.role != 'department_manager':
+        flash('You can only edit department managers.', 'danger')
+        return redirect(url_for('main.list_managers'))
+
+    form = ManagerForm(obj=manager)  # Make sure you have a ManagerForm similar to EmployeeForm
+
+    # Authorization check — managers can only edit themselves
+    if current_user.role == 'department_manager' and manager.id != current_user.id:
+        flash('You are not authorized to edit this manager.', 'danger')
+        return redirect(url_for('main.list_managers'))
+
+    if current_user.role == 'department_manager':
+        # Department managers can only stay in their current department
+        form.department_id.choices = [
+            (current_user.department_id, current_user.department.name)
+        ]
+    else:
+        # Admin: show all free departments + current one
+        free_departments = Department.query.filter(~Department.manager.any()).all()
+        if manager.department and manager.department not in free_departments:
+            free_departments.append(manager.department)
+        form.department_id.choices = [(d.id, d.name) for d in free_departments]
+
+    if form.validate_on_submit():
+        manager.username = form.username.data
+        if hasattr(manager, 'email'):
+            manager.email = form.email.data
+        manager.department_id = form.department_id.data
+        db.session.commit()
+        flash('Manager updated successfully!', 'success')
+        return redirect(url_for('main.list_managers'))
+
+    return render_template('managers/edit.html', form=form, manager=manager)
+

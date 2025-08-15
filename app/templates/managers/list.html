@@ -1,33 +1,32 @@
 {% extends 'base.html' %}
-{% block title %}Departments · EMS{% endblock %}
+{% block title %}Managers · EMS{% endblock %}
 {% block content %}
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0">Departments</h1>
+    <h1 class="h4 mb-0">Department Managers</h1>
     {% if current_user.role == 'administrator' %}
-      <a class="btn btn-primary" href="{{ url_for('main.add_department') }}">Add Department</a>
+      <a class="btn btn-primary" href="{{ url_for('main.add_managers') }}">Add Manager</a>
     {% endif %}
   </div>
 
-  {% if departments %}
+  {% if managers %}
     <div class="table-responsive shadow-sm rounded-3">
       <table class="table table-hover align-middle mb-0 bg-white">
         <thead class="table-light">
           <tr>
-            <th>Name</th>
-            <th class="text-end" style="width: 200px;">Actions</th>
+            <th>Username</th>
+            <th>Department</th>
+            <th class="text-end" style="width: 220px;">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {% for d in departments %}
+          {% for m in managers %}
             <tr>
-              <td>{{ d.name }}</td>
+              <td>{{ m.username }}</td>
+              <td>{{ m.department.name if m.department else '—' }}</td>
               <td class="text-end">
                 {% if current_user.role == 'administrator' %}
-                  {# 
-                    Removed edit option <a href="{{ url_for('main.edit_department', id=d.id) }}"  class="btn btn-sm btn-outline-secondary">Edit</a> 
-                  #}
-                  <!-- dgfdgfdfgdfg -->
-                  <form method="post" action="{{ url_for('main.delete_department', id=d.id) }}" class="d-inline" onsubmit="return confirm('Delete this department?');">
+                  <a href="{{ url_for('main.edit_managers', id=m.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                  <form method="post" action="{{ url_for('main.delete_managers', id=m.id) }}" class="d-inline" onsubmit="return confirm('Remove this manager?');">
                     {{ csrf_token() if csrf_token is defined }}
                     <button class="btn btn-sm btn-outline-danger">Delete</button>
                   </form>
@@ -41,6 +40,6 @@
       </table>
     </div>
   {% else %}
-    <div class="alert alert-info">No departments found.</div>
+    <div class="alert alert-info">No managers found.</div>
   {% endif %}
 {% endblock %}

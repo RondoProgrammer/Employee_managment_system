@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Add Manager · EMS{% endblock %}
+{% block content %}
+  <h1 class="h4 mb-3">Add Department Manager</h1>
+  <div class="card p-3 shadow-sm">
+    <form method="post" novalidate>
+      {{ form.csrf_token if form.csrf_token is defined }}
+      <div class="mb-3">
+        {{ form.username.label(class='form-label') }}
+        {{ form.username(class='form-control', placeholder='Username') }}
+        {% for e in form.username.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="mb-3">
+        {{ form.password.label(class='form-label') }}
+        {{ form.password(class='form-control', placeholder='Password', type='password') }}
+        {% for e in form.password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="mb-3">
+        {{ form.department_id.label(class='form-label') }}
+        {{ form.department_id(class='form-select') }}
+        {% for e in form.department_id.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      {{ form.submit(class='btn btn-primary') }}
+      <a href="{{ url_for('main.list_managers') }}" class="btn btn-link">Cancel</a>
+    </form>
+  </div>
+{% endblock %}

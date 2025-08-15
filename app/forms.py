@@ -13,9 +13,18 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
 
+
 class EmployeeForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=64)])
     position = StringField('Position', validators=[DataRequired(), Length(max=64)])
     salary = FloatField('Salary', validators=[DataRequired()])
     department_id = SelectField('Department', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Save')
+
+
+class ManagerForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    department_id = SelectField('Departmen', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Save')
+        
