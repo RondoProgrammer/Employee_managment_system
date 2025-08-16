@@ -22,6 +22,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    login_manager.login_view = 'main.login'  #@login_required knows where to send unauth’d users
 
     #imports all the routs (URLs) from app/routes.py
     #Registers the blueprint (bp) with the main app, so all your routes are included.

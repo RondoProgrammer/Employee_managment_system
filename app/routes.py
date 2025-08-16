@@ -34,6 +34,10 @@ def login():
         user = User.query.filter_by(username=form.username.data).first()  # Find user by username
         if user and user.password == form.password.data:  # Check if user exists and password matches
             login_user(user)  # Log in the user 
+            next_url = request.args.get('next')
+            return redirect(next_url or url_for('main.dashboard'))
+        else:
+            flash('Invalid username or password.', 'danger')
 
     return render_template('login.html', form=form)
 
