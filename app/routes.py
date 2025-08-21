@@ -1,5 +1,5 @@
 import uuid, os #uuid lets us generate a unique string name to avoid collsions
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, jsonify, render_template, redirect, url_for, flash, request
 #Blueprint lets you organize routes into modular groups (ex: route folders)
 #render_template returns HTML page from the templates/ folder
 from flask import current_app #for photos (?)
@@ -26,7 +26,6 @@ def index():
     return render_template('index.html')
 
 
-
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -44,26 +43,21 @@ def login():
 
     return render_template('login.html', form=form)
 
-# ------------------------
-# Logout
-# ------------------------
+
 @bp.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('main.index'))
 
-# ------------------------
-# Dashboard
-# ------------------------
+
 @bp.route('/dashboard')
 @login_required
 def dashboard():
     return render_template('dashboard.html')
 
-# ------------------------
+
 # List Employees
-# ------------------------
 @bp.route('/employees')
 @login_required
 def list_employees():
@@ -80,9 +74,7 @@ def list_employees():
 
     return render_template('employees/list.html', employees=employees)
 
-# ------------------------
-# Add Employee
-# ------------------------
+
 @bp.route('/employee/add', methods=['GET', 'POST'])
 @login_required
 def add_employee():
@@ -116,9 +108,7 @@ def add_employee():
 
     return render_template('employees/add.html', form=form)
 
-# ------------------------
-# Edit Employee
-# ------------------------
+
 @bp.route('/employee/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_employee(id):
@@ -154,9 +144,7 @@ def edit_employee(id):
 
     return render_template('employees/edit.html', form=form, employee=employee)
 
-# ------------------------
-# Delete Employee
-# ------------------------
+
 @bp.route('/employee/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_employee(id):
@@ -173,6 +161,9 @@ def delete_employee(id):
     return redirect(url_for('main.list_employees'))
 
 
+# Function to save uploaded photo
+# It takes a file_storage object (from the form) and saves it to the configured upload folder
+# Returns the unique filename or None if the file is invalid
 def _save_photo(file_storage):
     if not file_storage:
         return None
@@ -208,9 +199,7 @@ def _save_photo(file_storage):
     return unique_name
 
 
-# ------------------------
-# Departments: List
-# ------------------------
+# List Departments
 @bp.route('/departments')
 @login_required
 def list_departments():
@@ -226,10 +215,7 @@ def list_departments():
     return render_template('departments/list.html', departments=departments)
 
 
-
-# ------------------------
-# Departments: Add (Admin only)
-# ------------------------
+# Add Departments (Admin only)
 @bp.route('/department/add', methods=['GET', 'POST'])
 @login_required
 def add_department():
@@ -247,8 +233,8 @@ def add_department():
     return render_template('departments/add.html', form=form)
 
 
-# ------------------------
-# Departments: Edit (Admin only)
+
+# Edit Departments (Admin only but not enough info about departments to edit)
 '''
 @bp.route('/department/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -267,9 +253,9 @@ def edit_department(id):
     return render_template('departments/edit.html', form=form)
 '''
 
-# ------------------------
-# Departments: Delete (Admin only)
-# ------------------------
+
+# Delete Departments (Admin only)
+
 @bp.route('/department/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_department(id):
@@ -288,6 +274,7 @@ def delete_department(id):
     return redirect(url_for('main.list_departments'))
 
 
+# List Managers
 @bp.route('/managers')
 @login_required
 def list_managers():
@@ -299,6 +286,7 @@ def list_managers():
 
     # Render the department manager dashboard template
     return render_template('managers/list.html',managers=managers)
+
 
 @bp.route('/managers/add', methods=['GET' , 'POST'])
 @login_required
@@ -385,3 +373,43 @@ def edit_managers(id):
 
     return render_template('managers/edit.html', form=form, manager=manager)
 
+
+# API endpoint to get all employees
+@bp.route('/api/employees', methods=['GET'])
+def get_employees():
+    employees = Employee.query.all()
+    return jsonify([{
+        'id': emp.id,
+        'name': emp.name,
+        'position': emp.position,
+        'salary': emp.salary,
+        'department_id': emp.department_id,
+        'photo': emp.photo
+    } for emp in employees])
+
+@bp.route('/api/employees', methods=['POST'])
+def create_employee():
+    # Example implementation: create a new employee from JSON data
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No input data provided'}), 400
+
+    name = data.get('name')
+    position = data.get('position')
+    salary = data.get('salary')
+    department_id = data.get('department_id')
+    photo = data.get('photo', None)
+
+    if not all([name, position, salary, department_id]):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    new_employee = Employee(
+        name=name,
+        position=position,
+        salary=salary,
+        department_id=department_id,
+        photo=photo
+    )
+    db.session.add(new_employee)
+    db.session.commit()
+    return jsonify({'message': 'Employee created', 'id': new_employee.id}), 201
