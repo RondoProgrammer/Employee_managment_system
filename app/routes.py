@@ -101,11 +101,13 @@ def add_employee():
         form.department_id.choices = [(d.id, d.name) for d in Department.query.all()]
 
     if form.validate_on_submit():
+        filename = _save_photo(form.photo.data)
         new_employee = Employee(
             name=form.name.data,
             position=form.position.data,
             salary=form.salary.data,
-            department_id=form.department_id.data
+            department_id=form.department_id.data,
+            photo=filename    
         )
         db.session.add(new_employee)
         db.session.commit()
@@ -138,6 +140,14 @@ def edit_employee(id):
         employee.position = form.position.data
         employee.salary = form.salary.data
         employee.department_id = form.department_id.data
+        new_file = form.photo.data 
+        if new_file and new_file.filename:
+            filename = _save_photo(new_file)
+            if filename:
+                if employee.photo:
+                    try: os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], employee.photo))
+                    except: pass
+                employee.photo = filename
         db.session.commit()
         flash('Employee updated successfully!', 'success')
         return redirect(url_for('main.list_employees'))

@@ -35,12 +35,13 @@ class Department(db.Model):
 class Employee(db.Model):
     __tablename__ = 'employees'
     
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
     position = db.Column(db.String(64), nullable=False)
     salary = db.Column(db.Float, nullable=False)
+
+    photo = db.Column(db.String(256), nullable=True)
     
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
     department = db.relationship('Department', backref='employees')
-
-    photo = db.Column(db.String(256), nullable=True)

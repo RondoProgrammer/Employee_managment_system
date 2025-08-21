@@ -11,6 +11,6 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     #Absolute path to where the uploaded images are stored
-    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'app', 'static', 'uploads')
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024  #@MB per request
     ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}

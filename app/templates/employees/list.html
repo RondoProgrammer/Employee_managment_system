@@ -11,6 +11,7 @@
       <table class="table table-hover align-middle mb-0 bg-white">
         <thead class="table-light">
           <tr>
+            <th>Photo</th>
             <th>Name</th>
             <th>Position</th>
             <th>Salary</th>
@@ -21,13 +22,22 @@
         <tbody>
           {% for e in employees %}
             <tr>
+              <td>
+                {% if e.photo %}
+                  <img src="{{ url_for('static', filename='uploads/' ~ e.photo) }}"
+                       alt="{{ e.name }}" style="height:36px; width:36px; object-fit:cover; border-radius:6px;">
+                {% else %}
+                  <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
               <td>{{ e.name }}</td>
               <td>{{ e.position }}</td>
               <td>{{ '%.2f'|format(e.salary) }}</td>
               {% if current_user.role == 'administrator' %}<td>{{ e.department.name }}</td>{% endif %}
               <td class="text-end">
                 <a href="{{ url_for('main.edit_employee', id=e.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                <form method="post" action="{{ url_for('main.delete_employee', id=e.id) }}" class="d-inline" onsubmit="return confirm('Delete this employee?');">
+                <form method="post" action="{{ url_for('main.delete_employee', id=e.id) }}"
+                      class="d-inline" onsubmit="return confirm('Delete this employee?');">
                   {{ csrf_token() if csrf_token is defined }}
                   <button class="btn btn-sm btn-outline-danger">Delete</button>
                 </form>
