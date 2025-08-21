@@ -42,3 +42,5 @@ class Employee(db.Model):
     
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
     department = db.relationship('Department', backref='employees')
+
+    photo = db.Column(db.String(256), nullable=True)

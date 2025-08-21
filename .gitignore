@@ -12,3 +12,5 @@ __pycache__/
 *.db
 instance/
 
+#ignore everything in uploads/ folder
+app/static/uploads/

@@ -1,6 +1,9 @@
+import uuid, os #uuid lets us generate a unique string name to avoid collsions
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 #Blueprint lets you organize routes into modular groups (ex: route folders)
 #render_template returns HTML page from the templates/ folder
+from flask import current_app #for photos (?)
+from werkzeug.utils import secure_filename #important for files/photos
 from flask_login import login_user, logout_user, login_required, current_user
 from app.forms import LoginForm, EmployeeForm, DepartmentForm, ManagerForm
 from app.models import User, Employee, Department
@@ -160,6 +163,41 @@ def delete_employee(id):
     return redirect(url_for('main.list_employees'))
 
 
+def _save_photo(file_storage):
+    if not file_storage:
+        return None
+    
+    #makes sure that used file has no dangerous paths
+    original = secure_filename(file_storage.filename or '') 
+    if not original:
+        return None  #if it has dangerous paths or is empty suer inputed invalid file
+    
+    '''
+    # splitext("photo.png") → ("photo", ".png")
+
+    # ext.lower() ensures case insensitivity (.JPG → .jpg).
+
+    # Check if the extension (without .) is in ALLOWED_IMAGE_EXTENSIONS.
+    # This is a safety layer, in case the user renames a .exe file to .jpg.
+
+    ext = os.path.splitext(original)[1].lower()  
+    if ext.replace('.', '') not in current_app.config['ALLOWED_IMAGE_EXTENSIONS']:
+        return None
+    '''
+
+    # uuid.uuid4().hex gives a random 32 charachter string and makes it so no two users overwrite each others file
+    unique_name = uuid.uuid4().hex
+    # if blocked comment is used this line changes into
+    # unique_name = f"{uuid.uuid4().hex}{ext}" 
+    # ext appends the original file extansion to the unique string (.jpg, .png, .gif)
+    
+    # joins configured upload folder (uploads) with the unique filename
+    dest_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_name)
+
+    file_storage.save(dest_path)
+    return unique_name
+
+
 # ------------------------
 # Departments: List
 # ------------------------
@@ -176,6 +214,8 @@ def list_departments():
         # administrator
         departments = Department.query.all()
     return render_template('departments/list.html', departments=departments)
+
+
 
 # ------------------------
 # Departments: Add (Admin only)

@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -18,6 +19,9 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object('config.Config') #Loads config settings from congfig.py
 
+    # Ensure upload folder exists
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    
     #binds all objects created above to the flask app
     db.init_app(app)
     migrate.init_app(app, db)
